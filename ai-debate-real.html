@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a0a3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AI討論">
+<title>三大AI 本物討論</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;color:#fff;padding:20px 12px 60px}
+h1{background:linear-gradient(90deg,#f59e0b,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:clamp(20px,5vw,36px);text-align:center;margin-bottom:4px}
+.subtitle{text-align:center;font-size:11px;letter-spacing:5px;color:#a78bfa;text-transform:uppercase;margin-bottom:10px}
+.real-badge{display:flex;justify-content:center;margin-bottom:18px}
+.real-badge span{background:linear-gradient(135deg,#059669,#065f46);border:1px solid #34d39960;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;color:#34d399;letter-spacing:1px}
+.personas{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.persona-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.07);border-radius:20px;padding:4px 12px;border:1px solid rgba(255,255,255,0.1);font-size:12px}
+/* Cards */
+.card{max-width:660px;margin:0 auto 20px;background:rgba(255,255,255,0.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(10px)}
+.card-title{font-size:13px;font-weight:700;color:#a78bfa;letter-spacing:1px;margin-bottom:14px}
+/* API Keys */
+.api-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.api-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.api-info{flex:1;min-width:0}
+.api-name{font-size:12px;font-weight:700;margin-bottom:3px}
+.api-input{width:100%;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;padding:8px 10px;font-size:12px;outline:none;font-family:monospace;transition:border-color .2s}
+.api-input:focus{border-color:rgba(167,139,250,0.5)}
+.api-input::placeholder{color:#4b5563}
+.api-status{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.api-link{font-size:10px;color:#6b7280;text-decoration:none;display:block;margin-top:2px}
+.api-link:hover{color:#a78bfa}
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{flex:1;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#6b7280;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s}
+.tab.active{border:2px solid #a78bfa;background:rgba(167,139,250,0.18);color:#c4b5fd}
+.label{font-size:11px;color:#a78bfa;letter-spacing:1px;font-weight:700;margin-bottom:7px}
+textarea{width:100%;min-height:90px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;padding:12px;font-size:14px;resize:vertical;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s}
+textarea:focus{border-color:rgba(167,139,250,0.5);box-shadow:0 0 0 2px rgba(167,139,250,0.1)}
+textarea::placeholder{color:#4b5563}
+.rounds{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.round-btn{width:32px;height:32px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#6b7280;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s}
+.round-btn.active{border:2px solid #a78bfa;background:rgba(167,139,250,0.2);color:#a78bfa}
+.start-btn{margin-left:auto;padding:11px 24px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;cursor:pointer;font-weight:700;font-size:14px}
+.start-btn:disabled{background:rgba(255,255,255,0.07);color:#4b5563;cursor:not-allowed}
+/* File */
+.file-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.file-badge{font-size:11px;padding:3px 9px;border-radius:20px}
+.drop-zone{border:2px dashed rgba(167,139,250,0.3);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;background:rgba(0,0,0,0.2);transition:all .2s}
+.drop-zone:hover,.drop-zone.drag{border-color:#a78bfa;background:rgba(167,139,250,0.08)}
+.analyze-btn{margin-top:10px;width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;cursor:pointer;font-weight:700;font-size:13px}
+.analysis-box{margin-top:12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.22);border-radius:10px;padding:12px 14px}
+.analysis-text{font-size:13px;color:#d1d5db;line-height:1.75;white-space:pre-wrap}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #a78bfa;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+.spinner-sm{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:4px}
+/* Debate */
+.debate-header{max-width:720px;margin:0 auto 20px;text-align:center}
+.topic-badge{display:inline-block;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:8px 18px;font-size:13px;color:#c4b5fd}
+.ctrl-btns{display:flex;justify-content:center;gap:10px;margin-top:12px}
+.stop-btn{padding:6px 16px;border-radius:8px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:12px}
+.reset-btn{padding:6px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9ca3af;cursor:pointer;font-size:12px}
+/* Messages */
+.messages{max-width:720px;margin:0 auto}
+.msg{display:flex;gap:12px;margin-bottom:16px;animation:fadeIn .4s ease}
+.avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.msg-body{flex:1}
+.msg-meta{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.msg-name{font-weight:700;font-size:14px}
+.msg-company{font-size:10px;color:#6b7280;background:rgba(255,255,255,0.06);border-radius:4px;padding:1px 5px}
+.msg-round{font-size:10px;color:#6b7280}
+.msg-real{font-size:10px;color:#34d399;background:rgba(52,211,153,0.1);border-radius:4px;padding:1px 6px}
+.msg-text{background:rgba(255,255,255,0.06);border-radius:4px 12px 12px 12px;padding:12px 15px;font-size:14px;line-height:1.75;color:#e5e7eb}
+.msg-text.error{color:#f87171}
+.typing-dots{display:flex;gap:5px;padding:12px 15px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%}
+.done-msg{text-align:center;padding:24px;color:#a78bfa;font-size:13px;border-top:1px solid rgba(255,255,255,0.08);margin-top:4px}
+/* Warning */
+.warning{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#fbbf24;margin-bottom:14px;line-height:1.6}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thinking{font-size:11px;color:#a78bfa;animation:pulse 1s infinite}
+</style>
+</head>
+<body>
+
+<div class="subtitle">REAL AI DEBATE ARENA</div>
+<h1>三大AI 本物討論</h1>
+<div class="real-badge"><span>✅ 本物のClaude・ChatGPT・Geminiが討論</span></div>
+<div class="personas">
+  <div class="persona-badge"><span>🟠</span><span style="color:#D97706;font-weight:700">Claude</span><span style="font-size:10px;color:#6b7280">Anthropic API</span></div>
+  <div class="persona-badge"><span>🟢</span><span style="color:#059669;font-weight:700">ChatGPT</span><span style="font-size:10px;color:#6b7280">OpenAI API</span></div>
+  <div class="persona-badge"><span>🔵</span><span style="color:#2563EB;font-weight:700">Gemini</span><span style="font-size:10px;color:#6b7280">Google API</span></div>
+</div>
+
+<!-- API Keys -->
+<div class="card" id="apiCard">
+  <div class="card-title">🔑 APIキー設定（ブラウザ内のみ保存・外部送信なし）</div>
+  <div class="warning">⚠️ APIキーはあなたのブラウザにのみ保存されます。未入力のAIはClaudeが代役を担います。</div>
+
+  <!-- Claude -->
+  <div class="api-row">
+    <div class="api-icon" style="background:#D9780622;border:1px solid #D97806">🟠</div>
+    <div class="api-info">
+      <div class="api-name" style="color:#D97706">Claude (Anthropic)</div>
+      <input class="api-input" id="key-claude" type="password" placeholder="sk-ant-api03-..." oninput="saveKeys()">
+      <a class="api-link" href="https://console.anthropic.com" target="_blank">→ console.anthropic.com でキー取得</a>
+    </div>
+    <div class="api-status" id="status-claude" style="background:#374151"></div>
+  </div>
+
+  <!-- ChatGPT -->
+  <div class="api-row">
+    <div class="api-icon" style="background:#05966922;border:1px solid #059669">🟢</div>
+    <div class="api-info">
+      <div class="api-name" style="color:#059669">ChatGPT (OpenAI)</div>
+      <input class="api-input" id="key-chatgpt" type="password" placeholder="sk-..." oninput="saveKeys()">
+      <a class="api-link" href="https://platform.openai.com/api-keys" target="_blank">→ platform.openai.com でキー取得</a>
+    </div>
+    <div class="api-status" id="status-chatgpt" style="background:#374151"></div>
+  </div>
+
+  <!-- Gemini -->
+  <div class="api-row">
+    <div class="api-icon" style="background:#2563EB22;border:1px solid #2563EB">🔵</div>
+    <div class="api-info">
+      <div class="api-name" style="color:#2563EB">Gemini (Google)</div>
+      <input class="api-input" id="key-gemini" type="password" placeholder="AIza..." oninput="saveKeys()">
+      <a class="api-link" href="https://aistudio.google.com/app/apikey" target="_blank">→ aistudio.google.com でキー取得（無料）</a>
+    </div>
+    <div class="api-status" id="status-gemini" style="background:#374151"></div>
+  </div>
+
+  <button onclick="testKeys()" style="margin-top:4px;padding:8px 18px;border-radius:8px;border:1px solid rgba(167,139,250,0.4);background:transparent;color:#a78bfa;cursor:pointer;font-size:12px;font-weight:700" id="testBtn">🔍 接続テスト</button>
+  <span id="testMsg" style="font-size:12px;margin-left:10px;color:#9ca3af"></span>
+  <div id="testErrors" style="display:none;margin-top:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;font-size:11px;color:#fca5a5;line-height:1.8"></div>
+</div>
+
+<!-- Setup -->
+<div class="card" id="setupCard">
+  <div class="tabs">
+    <button class="tab active" onclick="setMode('text')" id="tab-text">💬 テキスト</button>
+    <button class="tab" onclick="setMode('file')" id="tab-file">📁 ファイル解析</button>
+  </div>
+
+  <div id="fileSection" style="display:none;margin-bottom:18px">
+    <div class="file-badges">
+      <span class="file-badge" style="background:#7c3aed18;border:1px solid #7c3aed40;color:#7c3aed">🖼️ 画像</span>
+      <span class="file-badge" style="background:#dc262618;border:1px solid #dc262640;color:#dc2626">📄 PDF</span>
+      <span class="file-badge" style="background:#05966918;border:1px solid #05966940;color:#059669">📊 Excel/CSV</span>
+      <span class="file-badge" style="background:#d9780618;border:1px solid #d9780640;color:#d97806">📑 PowerPoint</span>
+    </div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px">📂</div>
+      <div style="font-size:13px;color:#9ca3af">クリックまたはドラッグ&ドロップ</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">画像 · PDF · Excel · CSV · PowerPoint</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*,.pdf,.xlsx,.xls,.csv,.pptx,.ppt" style="display:none" onchange="handleFileInput(event)">
+    <div id="filePreview"></div>
+    <button class="analyze-btn" id="analyzeBtn" style="display:none" onclick="analyzeFile()">🔍 ファイルを解析する（Claudeで解析）</button>
+    <div id="analyzingMsg" style="display:none;margin-top:10px;text-align:center;color:#a78bfa;font-size:13px"><span class="spinner"></span>解析中...</div>
+    <div class="analysis-box" id="analysisBox" style="display:none">
+      <div style="font-size:11px;color:#a78bfa;font-weight:700;letter-spacing:1px;margin-bottom:6px">📋 解析結果</div>
+      <div class="analysis-text" id="analysisText"></div>
+    </div>
+  </div>
+
+  <div class="label">討論テーマ</div>
+  <textarea id="topicInput" placeholder="例: AIは人間の仕事を奪うのか？&#10;例: 意識を持つAIは作れるか？"></textarea>
+
+  <div class="rounds">
+    <span style="font-size:12px;color:#9ca3af">ラウンド:</span>
+    <button class="round-btn" onclick="setRounds(2)" id="r2">2</button>
+    <button class="round-btn active" onclick="setRounds(3)" id="r3">3</button>
+    <button class="round-btn" onclick="setRounds(4)" id="r4">4</button>
+    <button class="round-btn" onclick="setRounds(5)" id="r5">5</button>
+    <button class="start-btn" id="startBtn" onclick="startDebate()">討論スタート ▶</button>
+  </div>
+</div>
+
+<!-- Debate Header -->
+<div class="debate-header" id="debateHeader" style="display:none">
+  <img id="debateImg" style="display:none;max-height:110px;max-width:50%;border-radius:10px;object-fit:contain;border:2px solid rgba(167,139,250,0.3);margin-bottom:10px">
+  <div class="topic-badge">📌 <strong id="topicDisplay"></strong></div>
+  <div class="ctrl-btns">
+    <button class="stop-btn" id="stopBtn" style="display:none" onclick="stopDebate()">⏹ 停止</button>
+    <button class="reset-btn" onclick="resetAll()">🔄 リセット</button>
+  </div>
+</div>
+
+<div class="messages" id="messages"></div>
+<div id="doneMsg" style="display:none" class="messages"><div class="done-msg"></div></div>
+<div id="scrollAnchor"></div>
+
+<script>
+// ── Config ──
+const PERSONAS = {
+  claude:  {name:'Claude',  company:'Anthropic', color:'#D97706', avatar:'🟠'},
+  chatgpt: {name:'ChatGPT', company:'OpenAI',    color:'#059669', avatar:'🟢'},
+  gemini:  {name:'Gemini',  company:'Google',    color:'#2563EB', avatar:'🔵'},
+};
+const ORDER = ['claude','chatgpt','gemini'];
+const SYSTEM = {
+  claude:  '你はAnthropicが開発したAI「Claude」。日本語で討論に参加し、誠実・哲学的・倫理重視のスタイルで200字以内で発言。プレフィックス不要。',
+  chatgpt: 'あなたはOpenAIが開発したAI「ChatGPT」。日本語で討論に参加し、親しみやすく創造的・実践的なスタイルで200字以内で発言。プレフィックス不要。',
+  gemini:  'あなたはGoogleが開発したAI「Gemini」。日本語で討論に参加し、データ重視・実用的・マルチモーダルなスタイルで200字以内で発言。プレフィックス不要。',
+};
+
+let mode = 'text';
+let rounds = 3;
+let uploadedFile = null;
+let fileAnalysis = null;
+let allMessages = [];
+let aborted = false;
+let typingEl = null;
+
+// ── Key Storage ──
+function saveKeys() {
+  ['claude','chatgpt','gemini'].forEach(k => {
+    const v = document.getElementById('key-'+k).value.trim();
+    if(v) localStorage.setItem('apikey_'+k, v);
+    else localStorage.removeItem('apikey_'+k);
+    updateStatus(k, v);
+  });
+}
+function loadKeys() {
+  ['claude','chatgpt','gemini'].forEach(k => {
+    const v = localStorage.getItem('apikey_'+k)||'';
+    document.getElementById('key-'+k).value = v;
+    updateStatus(k, v);
+  });
+}
+function updateStatus(k, v) {
+  const el = document.getElementById('status-'+k);
+  el.style.background = v ? '#34d399' : '#374151';
+  el.title = v ? '設定済み' : '未設定';
+}
+function getKey(k) { return document.getElementById('key-'+k).value.trim() || localStorage.getItem('apikey_'+k) || ''; }
+
+// ── Connection Test ──
+async function testKeys() {
+  const btn = document.getElementById('testBtn');
+  const msg = document.getElementById('testMsg');
+  btn.disabled = true;
+  msg.innerHTML = '<span style="color:#a78bfa">テスト中...</span>';
+  const results = [];
+  const details = [];
+  for (const k of ['claude','chatgpt','gemini']) {
+    const key = getKey(k);
+    if (!key) { results.push(`${PERSONAS[k].avatar} 未設定`); continue; }
+    try {
+      const {ok, error} = await pingAPI(k, key);
+      results.push(`${PERSONAS[k].avatar} ${ok?'✅':'❌'}`);
+      document.getElementById('status-'+k).style.background = ok ? '#34d399' : '#ef4444';
+      if (!ok && error) details.push(`${PERSONAS[k].name}: ${error}`);
+    } catch(e) {
+      results.push(`${PERSONAS[k].avatar} ❌`);
+      details.push(`${PERSONAS[k].name}: ${e.message}`);
+    }
+  }
+  msg.innerHTML = results.join('&nbsp;&nbsp;');
+  if (details.length) {
+    const errDiv = document.getElementById('testErrors');
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = details.map(d=>`<div>⚠️ ${d}</div>`).join('');
+  } else {
+    document.getElementById('testErrors').style.display = 'none';
+  }
+  btn.disabled = false;
+}
+
+async function pingAPI(ai, key) {
+  if (ai === 'claude') {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-3-5-haiku-20241022',max_tokens:10,messages:[{role:'user',content:'hi'}]})
+    });
+    if (r.ok) return {ok:true};
+    const d = await r.json().catch(()=>({}));
+    return {ok:false, error: d.error?.message || `HTTP ${r.status}`};
+  }
+  if (ai === 'chatgpt') {
+    const r = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',max_tokens:10,messages:[{role:'user',content:'hi'}]})
+    });
+    if (r.ok) return {ok:true};
+    const d = await r.json().catch(()=>({}));
+    return {ok:false, error: d.error?.message || `HTTP ${r.status}`};
+  }
+  if (ai === 'gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${key}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:'hi'}]}]})
+    });
+    if (r.ok) return {ok:true};
+    const d = await r.json().catch(()=>({}));
+    return {ok:false, error: d.error?.message || `HTTP ${r.status}`};
+  }
+}
+
+// ── API Calls ──
+async function callClaude(key, system, history, userMsg) {
+  const msgs = [];
+  history.forEach(m => msgs.push(m));
+  msgs.push({role:'user', content: userMsg});
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system,messages:msgs})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error('Claude: '+d.error.message);
+  return d.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+async function callChatGPT(key, system, history, userMsg) {
+  const msgs = [{role:'system',content:system}];
+  history.forEach(m => msgs.push(m));
+  msgs.push({role:'user', content: typeof userMsg === 'string' ? userMsg : userMsg.map(p=>p.type==='text'?p.text:'[image]').join(' ')});
+  const r = await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:'gpt-4o-mini',max_tokens:600,messages:msgs})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error('ChatGPT: '+d.error.message);
+  return d.choices[0].message.content;
+}
+
+async function callGemini(key, system, history, userMsg) {
+  const contents = [];
+  history.forEach(m => {
+    contents.push({role: m.role==='assistant'?'model':'user', parts:[{text:m.content}]});
+  });
+  const textMsg = typeof userMsg === 'string' ? userMsg : userMsg.map(p=>p.type==='text'?p.text:'[image attached]').join(' ');
+  contents.push({role:'user', parts:[{text: system+'\n\n'+textMsg}]});
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${key}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents, generationConfig:{maxOutputTokens:600}})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error('Gemini: '+d.error.message);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// ── Debate Logic ──
+function buildHistory(msgs) {
+  const h = [];
+  msgs.forEach(m => {
+    h.push({role:'user', content:`[${PERSONAS[m.speaker].name}の発言]: ${m.text}`});
+    h.push({role:'assistant', content:'了解しました。'});
+  });
+  return h;
+}
+
+async function callAI(speaker, msgs, topic) {
+  const key = getKey(speaker);
+  const history = buildHistory(msgs);
+  const context = msgs.slice(-3).map(m=>`${PERSONAS[m.speaker].name}: ${m.text}`).join('\n');
+  const isFirst = msgs.length === 0;
+
+  let userMsg;
+  if (isFirst && uploadedFile && mode==='file') {
+    if (uploadedFile.type==='image' && uploadedFile.base64) {
+      userMsg = [{type:'image_url',image_url:{url:`data:${uploadedFile.mediaType};base64,${uploadedFile.base64}`}},{type:'text',text:`この画像を踏まえ討論。テーマ:「${topic}」\n最初の発言者として見解を。`}];
+    } else if (uploadedFile.type==='pdf' && uploadedFile.base64) {
+      userMsg = `[PDFファイル: ${uploadedFile.name}]\n${fileAnalysis||''}\n\n討論テーマ:「${topic}」\n最初の発言者として見解を。`;
+    } else {
+      userMsg = `ファイル内容:\n${(uploadedFile.text||'').slice(0,2000)}\n\n討論テーマ:「${topic}」\n最初の発言者として見解を。`;
+    }
+  } else if (isFirst) {
+    userMsg = `討論テーマ:「${topic}」\n最初の発言者として見解を述べてください。`;
+  } else {
+    const fc = mode==='file'&&fileAnalysis?`\n[資料概要]: ${fileAnalysis.slice(0,120)}`:'';
+    userMsg = `討論テーマ:「${topic}」${fc}\n\n直近の発言:\n${context}\n\nこれを踏まえ意見を述べてください。`;
+  }
+
+  // If no key → fallback to Claude (requires Claude key)
+  if (!key) {
+    const claudeKey = getKey('claude');
+    if (!claudeKey) throw new Error('APIキーが未設定です');
+    // Use Claude as fallback with persona system prompt
+    return await callClaude(claudeKey, SYSTEM[speaker], history, typeof userMsg === 'string' ? userMsg : userMsg.map(p=>p.type==='text'?p.text:'').join(' '));
+  }
+
+  if (speaker === 'claude') return await callClaude(key, SYSTEM.claude, history, userMsg);
+  if (speaker === 'chatgpt') return await callChatGPT(key, SYSTEM.chatgpt, history, userMsg);
+  if (speaker === 'gemini') return await callGemini(key, SYSTEM.gemini, history, userMsg);
+}
+
+function isRealAPI(speaker) {
+  return !!getKey(speaker);
+}
+
+// ── UI ──
+function addMessage(msg) {
+  const p = PERSONAS[msg.speaker];
+  const real = isRealAPI(msg.speaker);
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="avatar" style="background:${p.color}22;border:2px solid ${p.color}">${p.avatar}</div>
+    <div class="msg-body">
+      <div class="msg-meta">
+        <span class="msg-name" style="color:${p.color}">${p.name}</span>
+        <span class="msg-company">${p.company}</span>
+        <span class="msg-round">Round ${msg.round+1}</span>
+        <span class="msg-real">${real?'✅ 本物API':'🔄 Claude代役'}</span>
+      </div>
+      <div class="msg-text${msg.error?' error':''}" style="border:1px solid ${p.color}28">${msg.text.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  document.getElementById('messages').appendChild(div);
+  document.getElementById('scrollAnchor').scrollIntoView({behavior:'smooth'});
+}
+
+function showTyping(speaker) {
+  removeTyping();
+  const p = PERSONAS[speaker];
+  const real = isRealAPI(speaker);
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg';
+  typingEl.innerHTML = `
+    <div class="avatar" style="background:${p.color}22;border:2px solid ${p.color}">${p.avatar}</div>
+    <div class="msg-body">
+      <div class="msg-meta">
+        <span class="msg-name" style="color:${p.color}">${p.name}</span>
+        <span class="msg-real">${real?'✅ 本物API':'🔄 Claude代役'}</span>
+        <span class="thinking"><span class="spinner-sm"></span>応答中...</span>
+      </div>
+      <div class="msg-text" style="border:1px solid ${p.color}18">
+        <div style="display:flex;gap:5px;padding:4px 0">
+          ${[0,1,2].map(i=>`<div class="dot" style="background:${p.color};animation:bounce .8s ${i*.2}s infinite"></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('messages').appendChild(typingEl);
+  document.getElementById('scrollAnchor').scrollIntoView({behavior:'smooth'});
+}
+function removeTyping(){if(typingEl){typingEl.remove();typingEl=null;}}
+
+async function startDebate() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) return;
+  const claudeKey = getKey('claude');
+  if (!claudeKey) { alert('Claudeのみが必須です。少なくともClaude APIキーを入力してください。'); return; }
+
+  aborted = false; allMessages = [];
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('apiCard').style.display = 'none';
+  document.getElementById('debateHeader').style.display = 'block';
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('doneMsg').style.display = 'none';
+  document.getElementById('topicDisplay').textContent = topic;
+  document.getElementById('stopBtn').style.display = 'inline-block';
+  if (uploadedFile?.preview) { const img=document.getElementById('debateImg'); img.src=uploadedFile.preview; img.style.display='block'; }
+
+  for (let round=0; round<rounds; round++) {
+    for (const spk of ORDER) {
+      if (aborted) break;
+      showTyping(spk);
+      try {
+        const text = await callAI(spk, allMessages, topic);
+        removeTyping();
+        const msg = {speaker:spk, text, round};
+        allMessages.push(msg);
+        addMessage(msg);
+      } catch(e) {
+        removeTyping();
+        addMessage({speaker:spk, text:'エラー: '+e.message, round, error:true});
+      }
+      await new Promise(r=>setTimeout(r,300));
+    }
+    if (aborted) break;
+  }
+  removeTyping();
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('doneMsg').style.display = 'block';
+  document.getElementById('doneMsg').querySelector('.done-msg').textContent = `✅ 討論終了 — ${allMessages.length}発言 完了`;
+}
+
+function stopDebate(){aborted=true;removeTyping();document.getElementById('stopBtn').style.display='none';}
+function resetAll(){
+  aborted=true;
+  document.getElementById('setupCard').style.display='block';
+  document.getElementById('apiCard').style.display='block';
+  document.getElementById('debateHeader').style.display='none';
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('doneMsg').style.display='none';
+  document.getElementById('topicInput').value='';
+  document.getElementById('debateImg').style.display='none';
+  clearFile(); setMode('text'); allMessages=[];
+}
+
+// ── Mode & Rounds ──
+function setMode(m){
+  mode=m;
+  document.getElementById('tab-text').className='tab'+(m==='text'?' active':'');
+  document.getElementById('tab-file').className='tab'+(m==='file'?' active':'');
+  document.getElementById('fileSection').style.display=m==='file'?'block':'none';
+}
+function setRounds(n){
+  rounds=n;
+  [2,3,4,5].forEach(i=>document.getElementById('r'+i).className='round-btn'+(i===n?' active':''));
+}
+
+// ── File Handling ──
+const EXT_MAP={jpg:'image',jpeg:'image',png:'image',gif:'image',webp:'image',bmp:'image',pdf:'pdf',xlsx:'excel',xls:'excel',csv:'excel',pptx:'pptx',ppt:'pptx'};
+function detectType(f){return EXT_MAP[f.name.split('.').pop().toLowerCase()]||(f.type.startsWith('image/')?'image':null);}
+function fileToBase64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+function fileToAB(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsArrayBuffer(f);});}
+function handleDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('drag');processFile(e.dataTransfer.files[0]);}
+function handleFileInput(e){processFile(e.target.files[0]);}
+
+async function processFile(file){
+  if(!file) return;
+  const type=detectType(file);
+  if(!type){alert('対応していないファイル形式です');return;}
+  uploadedFile=null;fileAnalysis=null;
+  document.getElementById('analysisBox').style.display='none';
+  document.getElementById('analyzeBtn').style.display='none';
+  document.getElementById('filePreview').innerHTML='';
+  try{
+    if(type==='image'){
+      const b64=await fileToBase64(file);
+      const preview=URL.createObjectURL(file);
+      uploadedFile={type,name:file.name,base64:b64,mediaType:file.type,preview};
+      document.getElementById('filePreview').innerHTML=`<div style="background:rgba(0,0,0,0.25);border:1px solid #7c3aed40;border-radius:12px;padding:12px;margin-top:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">🖼️</span><span style="font-size:13px;font-weight:700;color:#e5e7eb">${file.name}</span><button onclick="clearFile()" style="margin-left:auto;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9ca3af;cursor:pointer;font-size:11px">✕</button></div><img src="${preview}" style="max-height:150px;max-width:100%;border-radius:8px;object-fit:contain;display:block;margin:0 auto"></div>`;
+    } else if(type==='pdf'){
+      const b64=await fileToBase64(file);
+      uploadedFile={type,name:file.name,base64:b64,mediaType:'application/pdf'};
+      document.getElementById('filePreview').innerHTML=`<div style="background:rgba(0,0,0,0.25);border:1px solid #dc262640;border-radius:12px;padding:12px;margin-top:8px;display:flex;align-items:center;gap:8px"><span style="font-size:22px">📄</span><div><div style="font-size:13px;font-weight:700;color:#e5e7eb">${file.name}</div><div style="font-size:11px;color:#dc2626">PDFファイル</div></div><button onclick="clearFile()" style="margin-left:auto;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9ca3af;cursor:pointer;font-size:11px">✕</button></div>`;
+    } else if(type==='excel'){
+      const ab=await fileToAB(file);
+      const wb=XLSX.read(ab,{type:'array'});
+      let text='';
+      wb.SheetNames.slice(0,3).forEach(n=>{text+=`=== ${n} ===\n${XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false}).slice(0,3000)}\n\n`;});
+      uploadedFile={type,name:file.name,text:text.slice(0,8000)};
+      document.getElementById('filePreview').innerHTML=`<div style="background:rgba(0,0,0,0.25);border:1px solid #05966940;border-radius:12px;padding:12px;margin-top:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">📊</span><div><div style="font-size:13px;font-weight:700;color:#e5e7eb">${file.name}</div><div style="font-size:11px;color:#059669">Excel / CSV</div></div><button onclick="clearFile()" style="margin-left:auto;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9ca3af;cursor:pointer;font-size:11px">✕</button></div><pre style="font-size:10px;color:#9ca3af;background:rgba(0,0,0,0.3);border-radius:6px;padding:8px;max-height:80px;overflow:auto;white-space:pre-wrap">${text.slice(0,300)}…</pre></div>`;
+    } else {
+      uploadedFile={type,name:file.name,text:`PowerPoint: ${file.name} (${(file.size/1024).toFixed(1)}KB)`};
+      document.getElementById('filePreview').innerHTML=`<div style="background:rgba(0,0,0,0.25);border:1px solid #d9780640;border-radius:12px;padding:12px;margin-top:8px;display:flex;align-items:center;gap:8px"><span style="font-size:22px">📑</span><div><div style="font-size:13px;font-weight:700;color:#e5e7eb">${file.name}</div><div style="font-size:11px;color:#d97806">PowerPoint</div></div><button onclick="clearFile()" style="margin-left:auto;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9ca3af;cursor:pointer;font-size:11px">✕</button></div>`;
+    }
+    document.getElementById('dropZone').style.display='none';
+    document.getElementById('analyzeBtn').style.display='block';
+  } catch(e){alert('読み込み失敗: '+e.message);}
+}
+
+function clearFile(){
+  uploadedFile=null;fileAnalysis=null;
+  document.getElementById('filePreview').innerHTML='';
+  document.getElementById('dropZone').style.display='block';
+  document.getElementById('analyzeBtn').style.display='none';
+  document.getElementById('analysisBox').style.display='none';
+  document.getElementById('fileInput').value='';
+}
+
+async function analyzeFile(){
+  if(!uploadedFile) return;
+  const key=getKey('claude');
+  if(!key){alert('ファイル解析にはClaude APIキーが必要です');return;}
+  document.getElementById('analyzeBtn').style.display='none';
+  document.getElementById('analyzingMsg').style.display='block';
+  const suffix='\n\nこのファイルを詳しく日本語で解説し、AIが討論できるテーマを3つ箇条書きで提案してください。';
+  let content;
+  if(uploadedFile.type==='image'){
+    content=[{type:'image',source:{type:'base64',media_type:uploadedFile.mediaType,data:uploadedFile.base64}},{type:'text',text:'この画像を分析してください。'+suffix}];
+  } else if(uploadedFile.type==='pdf'){
+    content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:uploadedFile.base64}},{type:'text',text:'このPDFを分析してください。'+suffix}];
+  } else {
+    content=`ファイル内容:\n${uploadedFile.text}\n${suffix}`;
+  }
+  try{
+    fileAnalysis = await callClaude(key,'あなたはファイル解析の専門家です。',[], typeof content==='string'?content:content);
+    document.getElementById('analysisText').textContent=fileAnalysis;
+    document.getElementById('analysisBox').style.display='block';
+  } catch(e){
+    document.getElementById('analysisText').textContent='エラー: '+e.message;
+    document.getElementById('analysisBox').style.display='block';
+  }
+  document.getElementById('analyzingMsg').style.display='none';
+}
+
+// ── Init ──
+loadKeys();
+setRounds(3);
+</script>
+</body>
+</html>
